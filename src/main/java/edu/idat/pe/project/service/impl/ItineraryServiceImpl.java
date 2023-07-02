@@ -1,6 +1,9 @@
 package edu.idat.pe.project.service.impl;
 
 import edu.idat.pe.project.dto.request.ItineraryRequest;
+import edu.idat.pe.project.dto.response.ItineraryResponse;
+import edu.idat.pe.project.dto.response.LocationResponse;
+import edu.idat.pe.project.dto.response.OriginResponse;
 import edu.idat.pe.project.persistence.entities.ItineraryEntity;
 import edu.idat.pe.project.persistence.entities.LocationEntity;
 import edu.idat.pe.project.persistence.entities.OriginEntity;
@@ -18,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -66,6 +70,46 @@ public class ItineraryServiceImpl implements ItineraryService {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public List<ItineraryResponse> listItineraries() {
+        List<ItineraryEntity> itineraries = itineraryRepository.findAllByDeletedFalse(); // Ejemplo: obtén los itinerarios desde el repositorio
+
+        List<ItineraryResponse> itineraryResponses = itineraries.stream()
+                .map(itinerary -> {
+                    ItineraryResponse response = new ItineraryResponse();
+                    response.setId(itinerary.getId());
+                    response.setDepartureDate(itinerary.getDepartureDate().toString());
+                    response.setArrivalDate(itinerary.getArrivalDate().toString());
+                    response.setHour(itinerary.getHour());
+                    response.setOrigin(mapOrigin(itinerary.getOrigin())); // Mapea el origen a OriginResponse
+                    response.setLocation(mapLocation(itinerary.getLocation())); // Mapea la ubicación a LocationResponse
+                    return response;
+                })
+                .collect(Collectors.toList());
+
+        return itineraryResponses;
+    }
+
+    private OriginResponse mapOrigin(OriginEntity origin) {
+        OriginResponse originResponse = new OriginResponse();
+        originResponse.setId(origin.getId());
+        originResponse.setCity(origin.getCity());
+        originResponse.setCountry(origin.getCountry());
+        originResponse.setAirport(origin.getAirport());
+        return originResponse;
+    }
+
+    private LocationResponse mapLocation(LocationEntity location) {
+        LocationResponse locationResponse = new LocationResponse();
+        locationResponse.setId(location.getId());
+        locationResponse.setCity(location.getCity());
+        locationResponse.setCountry(location.getCountry());
+        locationResponse.setAirport(location.getAirport());
+        return locationResponse;
+    }
+
+
 
 
 
