@@ -1,9 +1,15 @@
 package edu.idat.pe.project.service.impl;
 
+import edu.idat.pe.project.exceptions.BusinessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import edu.idat.pe.project.dto.request.ItineraryRequest;
 import edu.idat.pe.project.dto.response.ItineraryResponse;
 import edu.idat.pe.project.dto.response.LocationResponse;
 import edu.idat.pe.project.dto.response.OriginResponse;
+import edu.idat.pe.project.dto.response.PageableResponse;
 import edu.idat.pe.project.persistence.entities.ItineraryEntity;
 import edu.idat.pe.project.persistence.entities.LocationEntity;
 import edu.idat.pe.project.persistence.entities.OriginEntity;
@@ -13,6 +19,7 @@ import edu.idat.pe.project.persistence.repositories.OriginRepository;
 import edu.idat.pe.project.reports.imports.HelperImportExcel;
 import edu.idat.pe.project.service.ItineraryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,10 +78,47 @@ public class ItineraryServiceImpl implements ItineraryService {
         }
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public PageableResponse<ItineraryResponse> pageableItineraries(int numeroDePagina, int medidaDePagina, String ordenarPor, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(ordenarPor).ascending()
+                : Sort.by(ordenarPor).descending();
+        Pageable pageable = PageRequest.of(numeroDePagina, medidaDePagina, sort);
+
+        Page<ItineraryEntity> products = itineraryRepository.findAllByDeletedFalse(pageable);
+
+        List<ItineraryEntity> listProducts = products.getContent();
+        List<ItineraryResponse> contenido = listProducts.stream()
+                .map(itinerary -> {
+                    ItineraryResponse response = new ItineraryResponse();
+                    response.setId(itinerary.getId());
+                    response.setDepartureDate(itinerary.getDepartureDate().toString());
+                    response.setArrivalDate(itinerary.getArrivalDate().toString());
+                    response.setHour(itinerary.getHour());
+                    response.setOrigin(mapOrigin(itinerary.getOrigin())); // Mapea el origen a OriginResponse
+                    response.setLocation(mapLocation(itinerary.getLocation())); // Mapea la ubicación a LocationResponse
+                    return response;
+                })
+                .toList();
+
+        if (contenido.isEmpty()) {
+            throw new BusinessException("P-204", HttpStatus.NO_CONTENT, "Lista Vaciá de Productos");
+        }
+
+        PageableResponse<ItineraryResponse> pageItineraryResponse = new PageableResponse<>();
+        pageItineraryResponse.setContent(contenido);
+        pageItineraryResponse.setPageNumber(products.getNumber());
+        pageItineraryResponse.setPageSize(products.getSize());
+        pageItineraryResponse.setTotalElements(products.getTotalElements());
+        pageItineraryResponse.setTotalPages(products.getTotalPages());
+        pageItineraryResponse.setLast(products.isLast());
+        return pageItineraryResponse;
+    }
+
     @Override
     public List<ItineraryResponse> listItineraries() {
-        List<ItineraryEntity> itineraries = itineraryRepository.findAllByDeletedFalse(); // Ejemplo: obtén los itinerarios desde el repositorio
-
+        //List<ItineraryEntity> itineraries = itineraryRepository.findAllByDeletedFalse(); // Ejemplo: obtén los itinerarios desde el repositorio
+/*
         List<ItineraryResponse> itineraryResponses = itineraries.stream()
                 .map(itinerary -> {
                     ItineraryResponse response = new ItineraryResponse();
@@ -86,9 +130,9 @@ public class ItineraryServiceImpl implements ItineraryService {
                     response.setLocation(mapLocation(itinerary.getLocation())); // Mapea la ubicación a LocationResponse
                     return response;
                 })
-                .collect(Collectors.toList());
+                .collect(Collectors.toList());*/
 
-        return itineraryResponses;
+        return null;
     }
 
     private OriginResponse mapOrigin(OriginEntity origin) {

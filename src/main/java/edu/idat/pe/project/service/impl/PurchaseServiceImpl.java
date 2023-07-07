@@ -91,7 +91,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Transactional(readOnly = true)
     @Override
     public List<PurchaseResponse> getCustomerPurchases() {
-// Obtener el nombre de usuario del usuario autenticado desde el contexto de seguridad
+        // Obtener el nombre de usuario del usuario autenticado desde el contexto de seguridad
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String nombreUsuario = authentication.getName();
 

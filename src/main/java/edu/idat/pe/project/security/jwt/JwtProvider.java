@@ -1,6 +1,12 @@
 package edu.idat.pe.project.security.jwt;
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 import edu.idat.pe.project.security.dto.JwtDto;
+import edu.idat.pe.project.security.dto.TokenModel;
+import edu.idat.pe.project.security.dto.UserModel;
 import edu.idat.pe.project.security.entity.UsuarioPrincipal;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
@@ -15,15 +21,19 @@ import org.springframework.stereotype.Component;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.JWTParser;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.core.AuthenticationException;
+
 
 import java.security.Key;
 import java.text.ParseException;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class JwtProvider {
+public class JwtProvider implements AuthenticationProvider{
     private final static Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
@@ -31,6 +41,9 @@ public class JwtProvider {
 
     @Value("${jwt.expiration}")
     private int expiration;
+
+    @Value("${google.clientId}")
+    private String clientId;
 
     public String generateToken(Authentication authentication) {
         UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
@@ -89,6 +102,37 @@ public class JwtProvider {
     private Key getSecret(String secret){
         byte[] secretBytes = Decoders.BASE64URL.decode(secret);
         return Keys.hmacShaKeyFor(secretBytes);
+    }
+
+
+    //GMAIL - AUTH ...
+
+    @Override
+    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
+        TokenModel tokenModel = (TokenModel) authentication;
+        NetHttpTransport transport = new NetHttpTransport();
+        GsonFactory gsonFactory = GsonFactory.getDefaultInstance();
+        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, gsonFactory)
+                .setAudience(Collections.singletonList(clientId))
+                .build();
+        try {
+            GoogleIdToken idToken = verifier.verify(tokenModel.getToken());
+            if(idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String name = (String) payload.get("name");
+                String picture = (String) payload.get("picture");
+                UserModel userModel = new UserModel(name, picture);
+                return userModel;
+            }
+        } catch (Exception e) {
+            logger.error("fail", e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return authentication.isAssignableFrom(TokenModel.class);
     }
 
 }

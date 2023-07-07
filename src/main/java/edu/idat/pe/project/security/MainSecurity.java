@@ -1,6 +1,7 @@
 package edu.idat.pe.project.security;
 
 import edu.idat.pe.project.security.jwt.JwtEntryPoint;
+import edu.idat.pe.project.security.jwt.JwtProvider;
 import edu.idat.pe.project.security.jwt.JwtTokenFilter;
 import edu.idat.pe.project.security.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
