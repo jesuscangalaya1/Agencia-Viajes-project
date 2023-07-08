@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class JwtProvider implements AuthenticationProvider{
+public class JwtProvider{
     private final static Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
@@ -42,8 +42,6 @@ public class JwtProvider implements AuthenticationProvider{
     @Value("${jwt.expiration}")
     private int expiration;
 
-    @Value("${google.clientId}")
-    private String clientId;
 
     public String generateToken(Authentication authentication) {
         UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
@@ -107,33 +105,6 @@ public class JwtProvider implements AuthenticationProvider{
 
     //GMAIL - AUTH ...
 
-    @Override
-    public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        TokenModel tokenModel = (TokenModel) authentication;
-        NetHttpTransport transport = new NetHttpTransport();
-        GsonFactory gsonFactory = GsonFactory.getDefaultInstance();
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(transport, gsonFactory)
-                .setAudience(Collections.singletonList(clientId))
-                .build();
-        try {
-            GoogleIdToken idToken = verifier.verify(tokenModel.getToken());
-            if(idToken != null) {
-                GoogleIdToken.Payload payload = idToken.getPayload();
-                String name = (String) payload.get("name");
-                String picture = (String) payload.get("picture");
-                UserModel userModel = new UserModel(name, picture);
-                return userModel;
-            }
-        } catch (Exception e) {
-            logger.error("fail", e.getMessage());
-        }
-        return null;
-    }
-
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return authentication.isAssignableFrom(TokenModel.class);
-    }
 
 }
 

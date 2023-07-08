@@ -24,7 +24,7 @@ public class PacificAdventuresApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		// Inserciones en la tabla "destino"
-		LocationEntity location1 = new LocationEntity();
+	/*	LocationEntity location1 = new LocationEntity();
 		location1.setId(1L);
 		location1.setCity("Buenos Aires");
 		location1.setCountry("Argentina");
@@ -93,7 +93,7 @@ public class PacificAdventuresApplication implements CommandLineRunner {
 		origin5.setCity("Montevideo");
 		origin5.setCountry("Uruguay");
 		origin5.setAirport("Aeropuerto 5");
-		originRepository.save(origin5);
+		originRepository.save(origin5);*/
 	}
 
 
